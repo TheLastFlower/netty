@@ -41,6 +41,7 @@ public final class EchoServer {
     public static void main(String[] args) throws Exception {
         // Configure SSL.
         final SslContext sslCtx;
+        // 配置SSL
         if (SSL) {
             SelfSignedCertificate ssc = new SelfSignedCertificate();
             sslCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey()).build();
@@ -49,7 +50,9 @@ public final class EchoServer {
         }
 
         // Configure the server.
+        // 创建boss线程组 用于服务端接受客户端连接
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        // 创建worker线程组 用于进行 SocketChannel 的数据读写
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         final EchoServerHandler serverHandler = new EchoServerHandler();
         try {
