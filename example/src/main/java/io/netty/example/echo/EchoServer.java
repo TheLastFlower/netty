@@ -57,6 +57,7 @@ public final class EchoServer {
         final EchoServerHandler serverHandler = new EchoServerHandler();
         try {
             ServerBootstrap b = new ServerBootstrap();
+            // 设置使用的EventLoopGroup
             b.group(bossGroup, workerGroup)
              .channel(NioServerSocketChannel.class)
              .option(ChannelOption.SO_BACKLOG, 100)
@@ -77,9 +78,11 @@ public final class EchoServer {
             ChannelFuture f = b.bind(PORT).sync();
 
             // Wait until the server socket is closed.
+            // 监听服务端关闭,并阻塞等待
             f.channel().closeFuture().sync();
         } finally {
             // Shut down all event loops to terminate all threads.
+            // 优雅的关闭两个 EventLoopGroup 对象
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
