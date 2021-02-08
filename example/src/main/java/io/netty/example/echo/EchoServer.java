@@ -59,12 +59,13 @@ public final class EchoServer {
             ServerBootstrap b = new ServerBootstrap();
             // 设置使用的EventLoopGroup
             b.group(bossGroup, workerGroup)
-             .channel(NioServerSocketChannel.class)
-             .option(ChannelOption.SO_BACKLOG, 100)
-             .handler(new LoggingHandler(LogLevel.INFO))
-             .childHandler(new ChannelInitializer<SocketChannel>() {
+             .channel(NioServerSocketChannel.class)  // 内嵌了java nio 的ServerSocketChannel
+             .option(ChannelOption.SO_BACKLOG, 100) // 为ServerSocketChannel设置option选项
+             .handler(new LoggingHandler(LogLevel.INFO))  // 为ServerSocketChannel 设置处理器
+             .childHandler(new ChannelInitializer<SocketChannel>() {  // 使用ChannelInitializer 初始化连入服务端的Client的 SocketChannel的处理器
                  @Override
                  public void initChannel(SocketChannel ch) throws Exception {
+                     // 设置连入服务端Client 的SocketChannel的处理
                      ChannelPipeline p = ch.pipeline();
                      if (sslCtx != null) {
                          p.addLast(sslCtx.newHandler(ch.alloc()));
@@ -75,6 +76,7 @@ public final class EchoServer {
              });
 
             // Start the server.
+            // 绑定端口 阻塞等待过程  响应中断的方式为 抛出异常
             ChannelFuture f = b.bind(PORT).sync();
 
             // Wait until the server socket is closed.

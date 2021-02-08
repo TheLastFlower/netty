@@ -58,24 +58,31 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
     volatile EventLoopGroup group;
     @SuppressWarnings("deprecation")
+    // channel生产工厂
     private volatile ChannelFactory<? extends C> channelFactory;
     private volatile SocketAddress localAddress;
 
     // The order in which ChannelOptions are applied is important they may depend on each other for validation
     // purposes.
+    // 可选项集合
     private final Map<ChannelOption<?>, Object> options = new LinkedHashMap<ChannelOption<?>, Object>();
+    // 属性集合
     private final Map<AttributeKey<?>, Object> attrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
+    // 处理器
     private volatile ChannelHandler handler;
 
     AbstractBootstrap() {
         // Disallow extending from a different package.
     }
 
+    // 深拷贝 浅拷贝
     AbstractBootstrap(AbstractBootstrap<B, C> bootstrap) {
+        // 浅拷贝
         group = bootstrap.group;
         channelFactory = bootstrap.channelFactory;
         handler = bootstrap.handler;
         localAddress = bootstrap.localAddress;
+        // 深拷贝
         synchronized (bootstrap.options) {
             options.putAll(bootstrap.options);
         }
@@ -309,12 +316,14 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
+            // 创建Channel对象
             channel = channelFactory.newChannel();
+            // 初始化Channel配置
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
                 // channel can be null if newChannel crashed (eg SocketException("too many open files"))
-                channel.unsafe().closeForcibly();
+                channel.unsafe().closeForcibly(); // 强制关闭
                 // as the Channel is not registered yet we need to force the usage of the GlobalEventExecutor
                 return new DefaultChannelPromise(channel, GlobalEventExecutor.INSTANCE).setFailure(t);
             }
@@ -322,6 +331,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
 
+        // 注册Channel 到 EventLoopGroup
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
@@ -355,8 +365,10 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             @Override
             public void run() {
                 if (regFuture.isSuccess()) {
+                    // 注册成功,绑定端口
                     channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
                 } else {
+                    // 注册失败
                     promise.setFailure(regFuture.cause());
                 }
             }
@@ -459,6 +471,12 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
 
     @SuppressWarnings("unchecked")
+    /**
+     * 区别于option()方法
+     * setChannelOption()为已经创建的channel设置可选项
+     * option()方法 为即将创建的channel 设置可选项
+     * 两者除了这一点 是否还有其它不同?
+     */
     private static void setChannelOption(
             Channel channel, ChannelOption<?> option, Object value, InternalLogger logger) {
         try {
